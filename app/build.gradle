@@ -26,6 +26,21 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/NOTICE.md'
+        exclude 'META-INF/LICENSE.md'
+        exclude 'META-INF/*'
+        exclude 'THIRD_PARTY_LICENSES.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/main.kotlin_module'
+    }
 }
 
 dependencies {
@@ -37,9 +52,14 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
+    // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.65'
 
     // https://mvnrepository.com/artifact/com.oracle.oci.sdk/oci-java-sdk-objectstorage
-    implementation group: 'com.oracle.oci.sdk', name: 'oci-java-sdk-objectstorage', version: '1.33.0'
+    implementation ('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.33.0') {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+    }
+
 
     implementation rootProject.deps.rxAndroid
     implementation rootProject.deps.rxJava
