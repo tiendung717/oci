@@ -1,0 +1,80 @@
+/**
+ * "Blessed" dependencies give us the ability to force a dependency(s) version to be consistent
+ *  for packaging a library. In turn, this also allows the ability to retract the forced update
+ *  based off build type/flavor which reduces regressions caused by conflicts.
+ *
+ *  As an added bonus, we don't bloat our project build file by abstracting dependencies into its own
+ *  gradle file, then applying it back in as necessary.
+ */
+
+rootProject.ext.JAVA_SOURCE_VERSION = JavaVersion.VERSION_1_8
+rootProject.ext.JAVA_TARGET_VERSION = JavaVersion.VERSION_1_8
+
+rootProject.ext.TARGET_SDK_VERSION = 29
+rootProject.ext.COMPILE_SDK_VERSION = 29
+rootProject.ext.MIN_SDK_VERSION = 21
+rootProject.ext.VERSION_CODE = 923400
+rootProject.ext.VERSION_NAME = "9.2.34"
+
+rootProject.ext.PREFERENCE = "1.1.1"
+rootProject.ext.ROOM = "2.3.0-alpha02"
+rootProject.ext.RETROFIT = "2.9.0"
+rootProject.ext.SQL_CIPHER = "4.4.2@aar"
+rootProject.ext.HILT = "2.28-alpha"
+rootProject.ext.HILT_COMPILER = "1.0.0-alpha02"
+rootProject.ext.HILT_LIFECYCLE_VIEWMODEL = "1.0.0-alpha02"
+rootProject.ext.RX_JAVA = "2.2.12"
+rootProject.ext.RX_ANDROID = "2.1.1"
+rootProject.ext.RX_ADAPTER = "2.6.2"
+rootProject.ext.PICASSO = "2.71828"
+rootProject.ext.PAGING = "3.0.0-alpha11"
+rootProject.ext.KTX_LIFECYCLE_VIEWMODEL = "2.2.0"
+rootProject.ext.AUDIO_VISUALIZER = "1.0.5"
+rootProject.ext.EPOXY = "4.3.1"
+rootProject.ext.BUTTER_KNIFE = "10.2.3"
+rootProject.ext.TED_BOTTOM_PICKER = "2.0.1"
+rootProject.ext.PHOTO_VIEW = "2.3.0"
+rootProject.ext.JSOUP = "1.11.3"
+rootProject.ext.STARTUP = "1.0.0"
+rootProject.ext.MARKWON = "4.6.1"
+rootProject.ext.PHOTOEDITOR = "1.1.0"
+rootProject.ext.PHOTOCROPPER = "2.6.0"
+rootProject.ext.PROGRESS_VIEW = "1.0"
+rootProject.ext.colorSeekbar = "1.7.7"
+
+rootProject.ext.deps = [
+        preference              : "androidx.preference:preference:$PREFERENCE",
+        roomRuntime             : "androidx.room:room-runtime:$ROOM",
+        roomRxjava2             : "androidx.room:room-rxjava2:$ROOM",
+        roomCompiler            : "androidx.room:room-compiler:$ROOM",
+        retrofit                : "com.squareup.retrofit2:retrofit:$RETROFIT",
+        retrofitGson            : "com.squareup.retrofit2:converter-gson:$RETROFIT",
+        retrofitScalars         : "com.squareup.retrofit2:converter-scalars:$RETROFIT",
+        sqlCipher               : "net.zetetic:android-database-sqlcipher:$SQL_CIPHER",
+        hilt                    : "com.google.dagger:hilt-android:$HILT",
+        hiltAnnotation          : "com.google.dagger:hilt-android-compiler:$HILT",
+        hiltCompiler            : "androidx.hilt:hilt-compiler:$HILT_COMPILER",
+        hilt_lifecycle_viewmodel: "androidx.hilt:hilt-lifecycle-viewmodel:$HILT_LIFECYCLE_VIEWMODEL",
+        rxAndroid               : "io.reactivex.rxjava2:rxandroid:$RX_ANDROID",
+        rxJava                  : "io.reactivex.rxjava2:rxjava:$RX_JAVA",
+        rxAdapter               : "com.squareup.retrofit2:adapter-rxjava2:$RX_ADAPTER",
+        picasso                 : "com.squareup.picasso:picasso:$PICASSO",
+        pagingRuntime           : "androidx.paging:paging-runtime:$PAGING",
+        pagingRxJava            : "androidx.paging:paging-rxjava2:$PAGING",
+        ktxLifecycleViewModel   : "androidx.lifecycle:lifecycle-viewmodel-ktx:$KTX_LIFECYCLE_VIEWMODEL",
+        audioVisualizer         : "com.github.Armen101:AudioRecordView:$AUDIO_VISUALIZER",
+        epoxy                   : "com.airbnb.android:epoxy:$EPOXY",
+        epoxyAnnotation         : "com.airbnb.android:epoxy-processor:$EPOXY",
+        butterKnife             : "com.jakewharton:butterknife:$BUTTER_KNIFE",
+        butterKnifeAnnotation   : "com.jakewharton:butterknife-compiler:$BUTTER_KNIFE",
+        bottomImagePicker       : "gun0912.ted:tedbottompicker:$TED_BOTTOM_PICKER",
+        photoView               : "com.github.chrisbanes:PhotoView:$PHOTO_VIEW",
+        jsoup                   : "org.jsoup:jsoup:$JSOUP",
+        startup                 : "androidx.startup:startup-runtime:$STARTUP",
+        markDown                : "io.noties.markwon:core:$MARKWON",
+        markDownStrikeThrough   : "io.noties.markwon:ext-strikethrough:$MARKWON",
+        photoEditor             : "ja.burhanrashid52:photoeditor:$PHOTOEDITOR",
+        photoCropper            : "com.theartofdev.edmodo:android-image-cropper:$PHOTOCROPPER",
+        progress_view           : "com.github.Adilhusen:circle-progress-ad-android-:$PROGRESS_VIEW",
+        colorSeekbar            : "com.github.rtugeek:colorseekbar:$colorSeekbar"
+]
