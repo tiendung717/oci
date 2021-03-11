@@ -26,11 +26,12 @@ import java.util.UUID;
 
 public class OciManager {
 
+    private static final String BUCKET = "Staging";
+
     public OciCredential createOciCredential(String tenantId, String userId, String fingerprint, Region region, String pemFilePath) {
         Supplier<InputStream> privateKeySupplier = new SimplePrivateKeySupplier(pemFilePath);
 
-        AuthenticationDetailsProvider provider
-                = SimpleAuthenticationDetailsProvider.builder()
+        AuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
                 .tenantId(tenantId)
                 .userId(userId)
                 .fingerprint(fingerprint)
@@ -78,18 +79,37 @@ public class OciManager {
         return new UploadManager(service, uploadConfiguration);
     }
 
-    public UploadManager.UploadResponse upload(OciCredential credential, OciBucket bucket, String uploadFilePath, ProgressReporter progressReporter) {
+    public UploadManager.UploadResponse upload(OciCredential credential, String objectName, String contentType, long contentLength, String uploadFilePath, ProgressReporter progressReporter) {
         String namespaceName = credential.getNamespace();
 
         PutObjectRequest request = PutObjectRequest.builder()
-                .bucketName(bucket.getBucketName())
+                .bucketName(BUCKET)
                 .namespaceName(namespaceName)
-                .objectName(bucket.getObjectName())
-                .contentType(bucket.getContentType())
-                .contentLength(bucket.getContentLength())
+                .objectName(objectName)
+                .contentType(contentType)
+                .contentLength(contentLength)
                 .build();
 
         UploadManager.UploadRequest uploadRequest = UploadManager.UploadRequest.builder(new File(uploadFilePath))
+                .progressReporter(progressReporter)
+                .allowOverwrite(true)
+                .build(request);
+
+        return getUploadManager(credential.getService()).upload(uploadRequest);
+    }
+
+    public UploadManager.UploadResponse upload(OciCredential credential, String objectName, String contentType, long contentLength, InputStream inputStream, ProgressReporter progressReporter) {
+        String namespaceName = credential.getNamespace();
+
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucketName(BUCKET)
+                .namespaceName(namespaceName)
+                .objectName(objectName)
+//                .contentType(contentType)
+                .contentLength(contentLength)
+                .build();
+
+        UploadManager.UploadRequest uploadRequest = UploadManager.UploadRequest.builder(inputStream, contentLength)
                 .progressReporter(progressReporter)
                 .allowOverwrite(true)
                 .build(request);

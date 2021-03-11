@@ -13,6 +13,12 @@
         android:layout_height="wrap_content"
         android:text="Upload" />
 
+    <ProgressBar
+        android:id="@+id/progressUpload"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <TextView
         android:id="@+id/tvUploadProgress"
         android:layout_width="match_parent"
@@ -22,6 +28,7 @@
     <Button
         android:id="@+id/btnDownload"
         android:layout_width="match_parent"
+        android:enabled="false"
         android:layout_height="wrap_content"
         android:text="Download" />
 
