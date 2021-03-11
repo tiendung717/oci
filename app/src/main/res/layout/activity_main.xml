@@ -7,6 +7,15 @@
     android:padding="12dp"
     tools:context=".MainActivity">
 
+    <TextView
+        android:text="Press `Upload` to select file for uploading."
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="12dp" />
+
     <Button
         android:id="@+id/btnUpload"
         android:layout_width="match_parent"

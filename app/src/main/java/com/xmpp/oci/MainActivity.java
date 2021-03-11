@@ -31,6 +31,7 @@ import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
@@ -43,13 +44,14 @@ public class MainActivity extends AppCompatActivity {
     private View btnUpload;
     private ProgressBar progressBarUpload;
 
+    private CompositeDisposable disposableMap = new CompositeDisposable();
+
     private ProgressReporter uploadReporter = new ProgressReporter() {
         @Override
         public void onProgress(long byteSent, long total) {
             int progress = (int) ((byteSent * 100) / total);
             tvUploadProgress.setText(String.format(Locale.getDefault(), "%s/%s (%d%%)", toPrettySize(byteSent), toPrettySize(total), progress));
             progressBarUpload.setProgress(progress);
-
         }
     };
 
@@ -77,9 +79,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doUpload(String filePath) {
+        disposableMap.dispose();
+        disposableMap.clear();
+
         Disposable d = Single.create(emitter -> upload(filePath))
                 .subscribeOn(Schedulers.io())
-                .subscribe(aBoolean -> Log.d("nt.dung", "Upload OK!!!"));
+                .subscribe(aBoolean -> Log.d("nt.dung", "Upload OK!!!"), new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Toast.makeText(MainActivity.this, "Failed: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+
+        disposableMap.add(d);
     }
 
     private void upload(String filePath) throws IOException {
