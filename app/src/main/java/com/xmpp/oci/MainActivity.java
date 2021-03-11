@@ -21,8 +21,11 @@ import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetBucketResponse;
 import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
+import com.oracle.bmc.objectstorage.transfer.ProgressReporter;
+import com.oracle.bmc.objectstorage.transfer.UploadManager;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,108 +43,31 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ProgressReporter {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Disposable disposable = Single.create(new SingleOnSubscribe<Boolean>() {
-            @Override
-            public void subscribe(@NonNull SingleEmitter<Boolean> emitter) throws Exception {
-                upload();
-            }
-        }).subscribeOn(Schedulers.io())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean aBoolean) throws Exception {
-                        Log.d("nt.dung", "Success -> ");
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e("nt.dung", "Error -> " + throwable.getMessage());
-                    }
-                });
     }
 
-    private void upload() throws IOException {
+    private void upload(File uploadFile, String contentType, long contentLength) throws IOException {
         InputStream configStream = getAssets().open("oci.txt");
         final ConfigFileReader.ConfigFile config = ConfigFileReader.parse(configStream, null);
 
-        boolean copyPem = copyFileTo(this, "oci.pem", getCacheDir().getAbsolutePath() + "/oci.pem");
+        copyFileTo(this, "oci.pem", getCacheDir().getAbsolutePath() + "/oci.pem");
 
-        Supplier<InputStream> privateKeySupplier
-                = new SimplePrivateKeySupplier(getCacheDir().getAbsolutePath() + "/oci.pem");
+        OciManager ociManager = new OciManager();
+        OciCredential credential = ociManager.createOciCredential(
+                config.get("tenantId"),
+                config.get("userId"),
+                config.get("fingerprint"),
+                Region.UK_LONDON_1,
+                getCacheDir().getAbsolutePath() + "/oci.pem"
+        );
 
-        AuthenticationDetailsProvider provider
-                = SimpleAuthenticationDetailsProvider.builder()
-                .tenantId(config.get("tenancy"))
-                .userId(config.get("user"))
-                .fingerprint(config.get("fingerprint"))
-                .region(Region.UK_LONDON_1)
-                .privateKeySupplier(privateKeySupplier)
-                .build();
-
-        ObjectStorage client = new ObjectStorageClient(provider);
-
-        final String compartmentId = provider.getTenantId();
-        final String bucket = UUID.randomUUID().toString();
-        final String object = "File";
-
-        Log.d("nt.dung","Getting the namespace.");
-        GetNamespaceResponse namespaceResponse = client.getNamespace(GetNamespaceRequest.builder().build());
-        String namespaceName = namespaceResponse.getValue();
-
-        Log.d("nt.dung","Creating the source bucket.");
-        CreateBucketDetails createSourceBucketDetails =
-                CreateBucketDetails.builder()
-                        .compartmentId(compartmentId)
-                        .name(bucket).build();
-        CreateBucketRequest createSourceBucketRequest =
-                CreateBucketRequest.builder()
-                        .namespaceName(namespaceName)
-                        .createBucketDetails(createSourceBucketDetails)
-                        .build();
-        client.createBucket(createSourceBucketRequest);
-
-        Log.d("nt.dung","Creating the source object");
-        PutObjectRequest putObjectRequest =
-                PutObjectRequest.builder()
-                        .namespaceName(namespaceName)
-                        .bucketName(bucket)
-                        .objectName(object)
-                        .contentLength(4L)
-                        .putObjectBody(new ByteArrayInputStream("data".getBytes(StandardCharsets.UTF_8)))
-                        .build();
-        client.putObject(putObjectRequest);
-
-        Log.d("nt.dung","Creating Get bucket request");
-        List<GetBucketRequest.Fields> fieldsList = new ArrayList<>(2);
-        fieldsList.add(GetBucketRequest.Fields.ApproximateCount);
-        fieldsList.add(GetBucketRequest.Fields.ApproximateSize);
-        GetBucketRequest request =
-                GetBucketRequest.builder()
-                        .namespaceName(namespaceName)
-                        .bucketName(bucket)
-                        .fields(fieldsList)
-                        .build();
-
-        Log.d("nt.dung","Fetching bucket details");
-        GetBucketResponse response = client.getBucket(request);
-
-        Log.d("nt.dung","Bucket Name : " + response.getBucket().getName());
-        Log.d("nt.dung","Bucket Compartment : " + response.getBucket().getCompartmentId());
-        Log.d("nt.dung",
-                "The Approximate total number of objects within this bucket : "
-                        + response.getBucket().getApproximateCount());
-        Log.d("nt.dung",
-                "The Approximate total size of objects within this bucket : "
-                        + response.getBucket().getApproximateSize());
-
-        // Put Object
-
+        OciBucket ociBucket = ociManager.createUploadBucket(credential, uploadFile.getName(), contentType, contentLength);
+        UploadManager.UploadResponse response = ociManager.upload(credential, ociBucket, uploadFile.getAbsolutePath(), this);
     }
 
     static public boolean copyFileTo(Context c, String orifile,
@@ -161,5 +87,10 @@ public class MainActivity extends AppCompatActivity {
         myOutput.close();
 
         return true;
+    }
+
+    @Override
+    public void onProgress(long l, long l1) {
+
     }
 }
