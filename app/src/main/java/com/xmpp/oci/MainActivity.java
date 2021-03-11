@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBarUpload;
 
     private CompositeDisposable disposableMap = new CompositeDisposable();
+    private Disposable disposable;
 
     private ProgressReporter uploadReporter = new ProgressReporter() {
         @Override
@@ -79,10 +80,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doUpload(String filePath) {
-//        disposableMap.dispose();
-//        disposableMap.clear();
+        if (disposable != null && !disposable.isDisposed()) {
+            disposable.dispose();
+            tvUploadProgress.setText("");
+            progressBarUpload.setProgress(0);
+        }
 
-        Disposable d = Single.create(emitter -> upload(filePath))
+        disposable = Single.create(emitter -> upload(filePath))
                 .subscribeOn(Schedulers.io())
                 .subscribe(aBoolean -> Log.d("nt.dung", "Upload OK!!!"), new Consumer<Throwable>() {
                     @Override
@@ -91,7 +95,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        disposableMap.add(d);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (disposable != null && !disposable.isDisposed()) {
+            disposable.dispose();
+        }
+        super.onDestroy();
     }
 
     private void upload(String filePath) throws IOException {
@@ -112,8 +123,6 @@ public class MainActivity extends AppCompatActivity {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(filePath));
         long contentLength = inputStream.available();
         String objectName = "Waafi_Test_" + System.currentTimeMillis();
-
-        progressBarUpload.setMax(100);
 
         UploadManager.UploadResponse response = ociManager.upload(credential, objectName, null, contentLength, inputStream, uploadReporter);
     }
