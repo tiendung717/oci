@@ -74,6 +74,8 @@ public class OciManager {
                 UploadConfiguration.builder()
                         .allowMultipartUploads(true)
                         .allowParallelUploads(true)
+                        .minimumLengthForMultipartUpload(50)
+                        .lengthPerUploadPart(20)
                         .build();
 
         return new UploadManager(service, uploadConfiguration);

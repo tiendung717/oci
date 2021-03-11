@@ -79,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doUpload(String filePath) {
-        disposableMap.dispose();
-        disposableMap.clear();
+//        disposableMap.dispose();
+//        disposableMap.clear();
 
         Disposable d = Single.create(emitter -> upload(filePath))
                 .subscribeOn(Schedulers.io())
