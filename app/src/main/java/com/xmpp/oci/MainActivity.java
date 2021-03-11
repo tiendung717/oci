@@ -26,10 +26,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -47,12 +49,12 @@ public class MainActivity extends AppCompatActivity {
     private CompositeDisposable disposableMap = new CompositeDisposable();
     private Disposable disposable;
 
+    private long timeMs;
     private ProgressReporter uploadReporter = new ProgressReporter() {
         @Override
         public void onProgress(long byteSent, long total) {
             int progress = (int) ((byteSent * 100) / total);
             tvUploadProgress.setText(String.format(Locale.getDefault(), "%s/%s (%d%%)", toPrettySize(byteSent), toPrettySize(total), progress));
-            progressBarUpload.setProgress(progress);
         }
     };
 
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnUpload = findViewById(R.id.btnUpload);
         progressBarUpload = findViewById(R.id.progressUpload);
+        progressBarUpload.setVisibility(View.GONE);
         tvUploadProgress = findViewById(R.id.tvUploadProgress);
 
         btnUpload.setOnClickListener(this::startUpload);
@@ -86,9 +89,18 @@ public class MainActivity extends AppCompatActivity {
             progressBarUpload.setProgress(0);
         }
 
-        disposable = Single.create(emitter -> upload(filePath))
+        disposable = Single.create(emitter -> {
+            upload(filePath);
+            emitter.onSuccess(true);
+        })
                 .subscribeOn(Schedulers.io())
-                .subscribe(aBoolean -> Log.d("nt.dung", "Upload OK!!!"), new Consumer<Throwable>() {
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(aBoolean -> {
+                    Log.d("nt.dung", "Upload OK!!!");
+                    long duration = (System.currentTimeMillis() - timeMs);
+                    Toast.makeText(this, "Upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s", Toast.LENGTH_LONG).show();
+                    tvUploadProgress.setText("Total upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s");
+                }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         Toast.makeText(MainActivity.this, "Failed: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
@@ -124,7 +136,9 @@ public class MainActivity extends AppCompatActivity {
         long contentLength = inputStream.available();
         String objectName = "Waafi_Test_" + System.currentTimeMillis();
 
+        timeMs = System.currentTimeMillis();
         UploadManager.UploadResponse response = ociManager.upload(credential, objectName, null, contentLength, inputStream, uploadReporter);
+
     }
 
     static public boolean copyFileTo(Context c, String orifile,
