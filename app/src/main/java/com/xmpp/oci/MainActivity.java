@@ -3,6 +3,7 @@ package com.xmpp.oci;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -11,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.os.EnvironmentCompat;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
@@ -39,22 +41,30 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_FILE = 4;
 
     private TextView tvUploadProgress;
+    private TextView tvDownloadProgress;
+    private View btnDownload;
+    private View btnUpload;
 
     private final CompositeDisposable disposableMap = new CompositeDisposable();
     private OciSdk ociSdk;
+    private String objectName;
+    private String uploadFilePath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        View btnUpload = findViewById(R.id.btnUpload);
+        btnUpload = findViewById(R.id.btnUpload);
+        btnDownload = findViewById(R.id.btnDownload);
+
         ProgressBar progressBarUpload = findViewById(R.id.progressUpload);
         progressBarUpload.setVisibility(View.GONE);
         tvUploadProgress = findViewById(R.id.tvUploadProgress);
+        tvDownloadProgress = findViewById(R.id.tvDownloadProgress);
 
         btnUpload.setOnClickListener(this::startUpload);
-
+        btnDownload.setOnClickListener(this::startDownload);
         try {
             initOciSdk();
         } catch (IOException e) {
@@ -62,14 +72,56 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void startDownload(View view) {
+        String downloadId = UUID.randomUUID().toString();
+        Log.d("nt.dung", String.format("Download: (%s) (%s)", downloadId, objectName));
+        long timeMs = System.currentTimeMillis();
+
+        File file = new File(uploadFilePath);
+        String downloadFileName = "copy_" + file.getName();
+        String downloadFilePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + downloadFileName;
+        disposableMap.add(
+                ociSdk.download(downloadId, downloadFilePath, objectName)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(aBoolean -> {
+                            long duration = (System.currentTimeMillis() - timeMs);
+                            Toast.makeText(this, "Download time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s", Toast.LENGTH_LONG).show();
+                            tvDownloadProgress.setText("Total download time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s");
+                        }, new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) throws Exception {
+                                Toast.makeText(MainActivity.this, "Failed: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        })
+        );
+
+        disposableMap.add(ociSdk.observableProgress(downloadId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<ProgressEvent>() {
+                    @Override
+                    public void accept(ProgressEvent progressEvent) throws Exception {
+                        Log.e("nt.dung", "Download progress: " + progressEvent.toString());
+                        tvDownloadProgress.setText(progressEvent.toString());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.e("nt.dung", "Tracking progress error. " + throwable.getMessage());
+                    }
+                }));
+    }
+
     private void startUpload(View view) {
         pickFile();
     }
 
     private void doUpload(String filePath) {
+        uploadFilePath = filePath;
 
         String uploadId = UUID.randomUUID().toString();
-        String objectName = UUID.randomUUID().toString();
+        objectName = UUID.randomUUID().toString();
 
         Log.d("nt.dung", String.format("Upload: (%s) (%s)", uploadId, objectName));
 
@@ -78,10 +130,10 @@ public class MainActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(aBoolean -> {
-                    Log.d("nt.dung", "Upload OK!!!");
                     long duration = (System.currentTimeMillis() - timeMs);
                     Toast.makeText(this, "Upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s", Toast.LENGTH_LONG).show();
                     tvUploadProgress.setText("Total upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s");
+                    btnDownload.setEnabled(true);
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
