@@ -1,4 +1,4 @@
-package com.safarifone.oci;
+package com.safarifone.filetransfer;
 
 import java.util.Locale;
 

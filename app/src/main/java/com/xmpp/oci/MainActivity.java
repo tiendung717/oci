@@ -12,24 +12,17 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.os.EnvironmentCompat;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
-import com.oracle.bmc.objectstorage.transfer.ProgressReporter;
-import com.safarifone.oci.OciHelper;
-import com.safarifone.oci.OciSdk;
-import com.safarifone.oci.ProgressEvent;
+import com.safarifone.filetransfer.OciFileTransfer;
+import com.safarifone.filetransfer.ProgressEvent;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DecimalFormat;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import javax.activation.MimetypesFileTypeMap;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -46,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     private View btnUpload;
 
     private final CompositeDisposable disposableMap = new CompositeDisposable();
-    private OciSdk ociSdk;
+    private OciFileTransfer ociSdk;
     private String objectName;
     private String uploadFilePath;
 
@@ -169,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
         InputStream configStream = getAssets().open("oci.txt");
         final ConfigFileReader.ConfigFile config = ConfigFileReader.parse(configStream, null);
 
-        ociSdk = new OciSdk();
+        ociSdk = new OciFileTransfer();
         ociSdk.initialize(this, config.get("tenancy"), config.get("user"), config.get("fingerprint"), Region.UK_LONDON_1, "Staging");
 
 

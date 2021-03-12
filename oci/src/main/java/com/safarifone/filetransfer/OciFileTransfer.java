@@ -1,4 +1,4 @@
-package com.safarifone.oci;
+package com.safarifone.filetransfer;
 
 import android.content.Context;
 
@@ -32,7 +32,7 @@ import io.reactivex.SingleOnSubscribe;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.subjects.PublishSubject;
 
-public class OciSdk {
+public class OciFileTransfer implements FileTransfer {
 
     private boolean initialized = false;
     private ObjectStorage service;
@@ -61,7 +61,8 @@ public class OciSdk {
         this.initialized = true;
     }
 
-    public Single<Boolean> upload(String uploadId, String filePath, String objectName) {
+    @Override
+    public Single<Boolean> upload(String transId, String filePath, String objectName) {
         return Single.create(new SingleOnSubscribe<Boolean>() {
             @Override
             public void subscribe(@NonNull SingleEmitter<Boolean> emitter) throws Exception {
@@ -73,13 +74,14 @@ public class OciSdk {
                 InputStream stream = new BufferedInputStream(new FileInputStream(filePath));
                 long contentLength = stream.available();
                 String contentType = OciHelper.getMimeTypeFrom(filePath);
-                UploadManager.UploadResponse response = doUpload(uploadId, objectName, contentType, contentLength, stream);
+                UploadManager.UploadResponse response = doUpload(transId, objectName, contentType, contentLength, stream);
                 emitter.onSuccess(Boolean.TRUE);
             }
         });
     }
 
-    public Single<Boolean> download(String downloadId, String filePath, String objectName) {
+    @Override
+    public Single<Boolean> download(String transId, String filePath, String objectName) {
         return Single.create(new SingleOnSubscribe<Boolean>() {
             @Override
             public void subscribe(@NonNull SingleEmitter<Boolean> emitter) throws Exception {
@@ -87,14 +89,15 @@ public class OciSdk {
                     emitter.onError(new Throwable("OciSdk.initialize() must be called first."));
                     return;
                 }
-                doDownload(downloadId, objectName, filePath);
+                doDownload(transId, objectName, filePath);
                 emitter.onSuccess(Boolean.TRUE);
             }
         });
     }
 
-    public Observable<ProgressEvent> observableProgress(String id) {
-        return progressEventBus.filter(progressEvent -> progressEvent.getId().equals(id));
+    @Override
+    public Observable<ProgressEvent> observableProgress(String transId) {
+        return progressEventBus.filter(progressEvent -> progressEvent.getId().equals(transId));
     }
 
     private UploadManager.UploadResponse doUpload(String uploadId, String objectName, String contentType, long contentLength, InputStream inputStream) {

@@ -1,4 +1,4 @@
-package com.safarifone.oci;
+package com.safarifone.filetransfer;
 
 import android.content.Context;
 import android.text.TextUtils;
