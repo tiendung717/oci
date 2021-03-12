@@ -1,2 +1,3 @@
+include ':oci'
 include ':app'
 rootProject.name = "oci"

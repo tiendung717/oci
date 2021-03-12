@@ -1,7 +1,6 @@
 package com.xmpp.oci;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,25 +15,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.objectstorage.transfer.ProgressReporter;
-import com.oracle.bmc.objectstorage.transfer.UploadManager;
+import com.safarifone.oci.OciHelper;
+import com.safarifone.oci.OciSdk;
+import com.safarifone.oci.ProgressEvent;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
-import io.reactivex.SingleOnSubscribe;
+import javax.activation.MimetypesFileTypeMap;
+
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
@@ -43,39 +39,27 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_FILE = 4;
 
     private TextView tvUploadProgress;
-    private View btnUpload;
-    private ProgressBar progressBarUpload;
 
-    private CompositeDisposable disposableMap = new CompositeDisposable();
-    private Disposable disposable;
-
-    private long timeMs;
-    private ProgressReporter uploadReporter = new ProgressReporter() {
-        @Override
-        public void onProgress(long byteSent, long total) {
-            int progress = (int) ((byteSent * 100) / total);
-            tvUploadProgress.setText(String.format(Locale.getDefault(), "%s/%s (%d%%)", toPrettySize(byteSent), toPrettySize(total), progress));
-        }
-    };
-
-    private ProgressReporter downloadReporter = new ProgressReporter() {
-        @Override
-        public void onProgress(long byteRecv, long total) {
-
-        }
-    };
+    private final CompositeDisposable disposableMap = new CompositeDisposable();
+    private OciSdk ociSdk;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnUpload = findViewById(R.id.btnUpload);
-        progressBarUpload = findViewById(R.id.progressUpload);
+        View btnUpload = findViewById(R.id.btnUpload);
+        ProgressBar progressBarUpload = findViewById(R.id.progressUpload);
         progressBarUpload.setVisibility(View.GONE);
         tvUploadProgress = findViewById(R.id.tvUploadProgress);
 
         btnUpload.setOnClickListener(this::startUpload);
+
+        try {
+            initOciSdk();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void startUpload(View view) {
@@ -83,16 +67,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doUpload(String filePath) {
-        if (disposable != null && !disposable.isDisposed()) {
-            disposable.dispose();
-            tvUploadProgress.setText("");
-            progressBarUpload.setProgress(0);
-        }
 
-        disposable = Single.create(emitter -> {
-            upload(filePath);
-            emitter.onSuccess(true);
-        })
+        String uploadId = UUID.randomUUID().toString();
+        String objectName = UUID.randomUUID().toString();
+
+        Log.d("nt.dung", String.format("Upload: (%s) (%s)", uploadId, objectName));
+
+        long timeMs = System.currentTimeMillis();
+        disposableMap.add(ociSdk.upload(uploadId, filePath, objectName)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(aBoolean -> {
@@ -105,61 +87,41 @@ public class MainActivity extends AppCompatActivity {
                     public void accept(Throwable throwable) throws Exception {
                         Toast.makeText(MainActivity.this, "Failed: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                     }
-                });
+                })
+        );
+
+        disposableMap.add(ociSdk.observableProgress(uploadId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<ProgressEvent>() {
+                    @Override
+                    public void accept(ProgressEvent progressEvent) throws Exception {
+                        tvUploadProgress.setText(progressEvent.toString());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.e("nt.dung", "Tracking progress error");
+                    }
+                }));
 
     }
 
     @Override
     protected void onDestroy() {
-        if (disposable != null && !disposable.isDisposed()) {
-            disposable.dispose();
-        }
+        disposableMap.dispose();
         super.onDestroy();
     }
 
-    private void upload(String filePath) throws IOException {
+    private void initOciSdk() throws IOException {
         InputStream configStream = getAssets().open("oci.txt");
         final ConfigFileReader.ConfigFile config = ConfigFileReader.parse(configStream, null);
 
-        copyFileTo(this, "oci.pem", getCacheDir().getAbsolutePath() + "/oci.pem");
+        ociSdk = new OciSdk();
+        ociSdk.initialize(this, config.get("tenancy"), config.get("user"), config.get("fingerprint"), Region.UK_LONDON_1, "Staging");
 
-        OciManager ociManager = new OciManager();
-        OciCredential credential = ociManager.createOciCredential(
-                config.get("tenancy"),
-                config.get("user"),
-                config.get("fingerprint"),
-                Region.UK_LONDON_1,
-                getCacheDir().getAbsolutePath() + "/oci.pem"
-        );
-
-        InputStream inputStream = new BufferedInputStream(new FileInputStream(filePath));
-        long contentLength = inputStream.available();
-        String objectName = "Waafi_Test_" + System.currentTimeMillis();
-
-        timeMs = System.currentTimeMillis();
-        UploadManager.UploadResponse response = ociManager.upload(credential, objectName, null, contentLength, inputStream, uploadReporter);
 
     }
-
-    static public boolean copyFileTo(Context c, String orifile,
-                                     String desfile) throws IOException {
-        InputStream myInput;
-        OutputStream myOutput = new FileOutputStream(desfile);
-        myInput = c.getAssets().open(orifile);
-        byte[] buffer = new byte[1024];
-        int length = myInput.read(buffer);
-        while (length > 0) {
-            myOutput.write(buffer, 0, length);
-            length = myInput.read(buffer);
-        }
-
-        myOutput.flush();
-        myInput.close();
-        myOutput.close();
-
-        return true;
-    }
-
 
     public void pickFile() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -168,21 +130,6 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         startActivityForResult(Intent.createChooser(intent, "Select File"), REQUEST_FILE);
-    }
-
-    public String toPrettySize(long sizeInBytes) {
-        double sizeInKb = sizeInBytes / 1024f;
-
-        double sizeInMb = sizeInKb / 1024f;
-
-        DecimalFormat format = new DecimalFormat("##.##");
-        if (sizeInMb >= 1) {
-            return format.format(sizeInMb) + " MB";
-        } else if (sizeInKb >= 1) {
-            return format.format(sizeInKb) + " KB";
-        } else {
-            return sizeInBytes + " B";
-        }
     }
 
     @Override

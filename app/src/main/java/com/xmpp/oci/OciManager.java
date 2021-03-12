@@ -42,33 +42,6 @@ public class OciManager {
         return new OciCredential(new ObjectStorageClient(provider), provider);
     }
 
-    public OciBucket createUploadBucket(OciCredential credential,
-                                        String objectName,
-                                        String contentType,
-                                        long contentLength) {
-        String namespaceName = credential.getNamespace();
-        String bucketName = UUID.randomUUID().toString();
-
-        CreateBucketDetails createSourceBucketDetails = CreateBucketDetails.builder()
-                .compartmentId(credential.getTenantId())
-                .name(bucketName)
-                .build();
-
-        CreateBucketRequest createSourceBucketRequest = CreateBucketRequest.builder()
-                .namespaceName(namespaceName)
-                .createBucketDetails(createSourceBucketDetails)
-                .build();
-
-        CreateBucketResponse response = credential.getService().createBucket(createSourceBucketRequest);
-
-        OciBucket ociBucket = new OciBucket();
-        ociBucket.setBucketName(response.getBucket().getName());
-        ociBucket.setObjectName(objectName);
-        ociBucket.setContentLength(contentLength);
-        ociBucket.setContentType(contentType);
-        return ociBucket;
-    }
-
     private UploadManager getUploadManager(ObjectStorage service) {
         UploadConfiguration uploadConfiguration =
                 UploadConfiguration.builder()
