@@ -3,6 +3,7 @@ package com.safarifone.filetransfer;
 import android.content.Context;
 
 import com.google.common.base.Supplier;
+import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
@@ -25,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.inject.Inject;
+
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
@@ -41,6 +44,18 @@ public class OciFileTransfer implements FileTransfer {
     private UploadManager uploadManager;
 
     private final PublishSubject<ProgressEvent> progressEventBus = PublishSubject.create();
+
+    @Inject
+    public OciFileTransfer() {
+
+    }
+
+    public void initialize(Context context, String bucketName) throws IOException {
+        InputStream configStream = context.getAssets().open("oci.txt");
+        final ConfigFileReader.ConfigFile config = ConfigFileReader.parse(configStream, null);
+
+        initialize(context, config.get("tenancy"), config.get("user"), config.get("fingerprint"), Region.UK_LONDON_1, bucketName);
+    }
 
     public void initialize(Context context, String tenantId, String userId, String fingerprint, Region region, String bucketName) throws IOException {
         String pemFilePath = OciHelper.copyFileTo(context, "oci.pem", context.getCacheDir().getAbsolutePath() + "/oci.pem");
@@ -98,6 +113,11 @@ public class OciFileTransfer implements FileTransfer {
     @Override
     public Observable<ProgressEvent> observableProgress(String transId) {
         return progressEventBus.filter(progressEvent -> progressEvent.getId().equals(transId));
+    }
+
+    @Override
+    public Observable<ProgressEvent> observableProgress() {
+        return progressEventBus;
     }
 
     private UploadManager.UploadResponse doUpload(String uploadId, String objectName, String contentType, long contentLength, InputStream inputStream) {
