@@ -11,25 +11,23 @@ import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
-import com.oracle.bmc.model.BmcException;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
-import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
-import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
 import com.oracle.bmc.objectstorage.transfer.UploadConfiguration;
 import com.oracle.bmc.objectstorage.transfer.UploadManager;
 import com.oracle.bmc.retrier.RetryConfiguration;
-import com.oracle.bmc.retrier.RetryOptions;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.Executors;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -61,7 +59,7 @@ public class OciFileTransfer implements FileTransfer {
     }
 
     public void initialize(Context context, String tenantId, String userId, String fingerprint, Region region, String bucketName) throws IOException {
-        String pemFilePath = OciHelper.copyFileTo(context, "pem.txt", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + "/pem.txt");
+        String pemFilePath = OciHelper.copyFileTo(context, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + "/raw/pem.txt");
 
         Log.d("nt.dung", "File: " + pemFilePath);
         Supplier<InputStream> privateKeySupplier = new SimplePrivateKeySupplier(pemFilePath);
@@ -87,75 +85,35 @@ public class OciFileTransfer implements FileTransfer {
 
     public void testUpload(Context context, String filePath, String objectName) throws IOException {
 
-        String pemFilePath = OciHelper.copyFileTo(context, "pem.txt", context.getCacheDir().getAbsolutePath() + File.separator + System.currentTimeMillis() + ".pem");
+        String pemFilePath = OciHelper.copyFileTo(context, context.getCacheDir().getAbsolutePath() + File.separator + System.currentTimeMillis() + ".pem");
 
         Log.d("nt.dung", "File: " + pemFilePath);
-        Supplier<InputStream> privateKeySupplier = new SimplePrivateKeySupplier(pemFilePath);
+        Supplier<InputStream> keySupplier = new SimplePrivateKeySupplier(pemFilePath);
 
-        AuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
-                .tenantId("ocid1.tenancy.oc1..aaaaaaaaam4tx4gnec3sq755rcw7y5snrkgxcwnn2gb4efctsm3zfa4lf7ea")
-                .userId("ocid1.user.oc1..aaaaaaaaaflvckuurvvagas45heubr6tqptw22jcypozspwqo473ow6fbm3q")
-                .fingerprint("01:b8:73:61:ec:58:db:30:48:62:4f:78:2a:33:87:fe")
-                .privateKeySupplier(privateKeySupplier)
+        SimpleAuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
+                .tenantId("ocid1.tenancy.oc1..aaaaaaaaam4tx4gnec3sq755rcw7y5snrkgxcwnn2gb4efctsm3zfa4lf7ea".trim())
+                .userId("ocid1.user.oc1..aaaaaaaaaflvckuurvvagas45heubr6tqptw22jcypozspwqo473ow6fbm3q".trim())
+                .fingerprint("01:b8:73:61:ec:58:db:30:48:62:4f:78:2a:33:87:fe".trim())
+                .region(Region.UK_LONDON_1)
+                .privateKeySupplier(keySupplier)
                 .build();
 
-        ClientConfiguration clientConfig
-                = ClientConfiguration.builder()
-                .retryConfiguration(RetryConfiguration.builder()
-                        .build())
+        ClientConfiguration clientConfig = ClientConfiguration.builder()
                 .connectionTimeoutMillis(3000)
                 .readTimeoutMillis(60000)
                 .build();
 
         ObjectStorageClient client = new ObjectStorageClient(provider, clientConfig);
-        client.setRegion(Region.UK_LONDON_1);
 
-        GetNamespaceResponse namespaceResponse = client.getNamespace(GetNamespaceRequest.builder()
-                .compartmentId(provider.getTenantId())
-                .build());
-        String namespace = namespaceResponse.getValue();
-        Log.d("nt.dung", "Namespace: " + namespace);
-
-        Log.d("nt.dung", "end point: " + client.getEndpoint());
-
-        File file = new File(filePath);
-        long contentLength = file.length();
-        String contentType = "image/png";
-
-        // configure upload settings as desired
-        UploadConfiguration uploadConfiguration =
-                UploadConfiguration.builder()
-                        .allowMultipartUploads(true)
-                        .allowParallelUploads(true)
-                        .build();
-
-        UploadManager uploadManager = new UploadManager(client, uploadConfiguration);
-
-        PutObjectRequest request = PutObjectRequest.builder()
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .namespaceName(getNamespace())
                 .bucketName("Staging")
-                .namespaceName(namespace)
-                .objectName(objectName)
-                .contentType(contentType)
-                .contentLength(contentLength)
+                .objectName("Test")
+                .opcClientRequestId(UUID.randomUUID().toString())
+                .contentLength(4L)
+                .putObjectBody(new ByteArrayInputStream("data".getBytes(StandardCharsets.UTF_8)))
                 .build();
-
-        UploadManager.UploadRequest uploadRequest = UploadManager.UploadRequest.builder(file)
-                .allowOverwrite(true)
-                .parallelUploadExecutorService(Executors.newFixedThreadPool(4))
-                .build(request);
-
-
-        try {
-            UploadManager.UploadResponse response = uploadManager
-                    .upload(uploadRequest);
-            Log.d("nt.dung", ">>>>> result: " + response);
-        } catch (BmcException e) {
-            String requestId = e.getOpcRequestId();
-            Log.d("nt.dung", e.getMessage() + ", requestId: " + requestId);
-            e.printStackTrace();
-        }
-
-
+        client.putObject(putObjectRequest);
     }
 
     @Override
@@ -270,16 +228,6 @@ public class OciFileTransfer implements FileTransfer {
     }
 
     public String getNamespace() {
-//        return "lrl0eb8o6say";
-        if (namespace == null) {
-            Log.d("nt.dung", "Namespace: +++");
-            GetNamespaceResponse namespaceResponse = service.getNamespace(GetNamespaceRequest.builder()
-                    .compartmentId(provider.getTenantId())
-                    .build());
-            this.namespace = namespaceResponse.getValue();
-            Log.d("nt.dung", "Namespace: " + namespace);
-        }
-        Log.d("nt.dung", ">> Namespace: " + namespace);
-        return namespace;
+        return "lrl0eb8o6say";
     }
 }

@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import com.safarifone.oci.R;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,20 +17,18 @@ import java.text.DecimalFormat;
 import javax.annotation.Nullable;
 
 public class OciHelper {
-    public static String copyFileTo(Context c, String assetFileName, String destFile) {
-        InputStream myInput;
+    public static String copyFileTo(Context c, String destFile) {
+        InputStream input;
         try {
-            OutputStream myOutput = new FileOutputStream(new File(destFile));
-            myInput = c.getAssets().open(assetFileName);
-            byte[] buffer = new byte[1024];
-            int length = myInput.read(buffer);
-            while (length > 0) {
-                myOutput.write(buffer, 0, length);
-                length = myInput.read(buffer);
-            }
-
-            myInput.close();
-            myOutput.close();
+            OutputStream output = new FileOutputStream(new File(destFile));
+            input = c.getResources().openRawResource(R.raw.pem);
+            int size = input.available();
+            byte[] buffer = new byte[size];
+            int length = input.read(buffer);
+            output.write(buffer, 0, length);
+            Log.d("nt.dung", "Length of pem file: " + length);
+            input.close();
+            output.close();
         } catch (Exception e) {
             Log.e("nt.dung", "Can't copy asset file. " + e.getMessage());
             return null;
