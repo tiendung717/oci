@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -58,11 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnUpload.setOnClickListener(this::startUpload);
         btnDownload.setOnClickListener(this::startDownload);
-        try {
-            initOciSdk();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
     }
 
     private void startDownload(View view) {
@@ -108,47 +105,62 @@ public class MainActivity extends AppCompatActivity {
 
     private void startUpload(View view) {
         pickFile();
+//        Executors.newSingleThreadExecutor().execute(() -> ociSdk.getNamespace());
+
     }
 
     private void doUpload(String filePath) {
         uploadFilePath = filePath;
 
-        String uploadId = UUID.randomUUID().toString();
-        objectName = UUID.randomUUID().toString();
+//        String uploadId = UUID.randomUUID().toString();
+        String objectName = UUID.randomUUID().toString();
 
-        Log.d("nt.dung", String.format("Upload: (%s) (%s)", uploadId, objectName));
+        Log.d("nt.dung", String.format("Upload: (%s) (%s)", "uploadId", objectName));
 
         long timeMs = System.currentTimeMillis();
-        disposableMap.add(ociSdk.upload(uploadId, filePath, objectName)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(aBoolean -> {
-                    long duration = (System.currentTimeMillis() - timeMs);
-                    Toast.makeText(this, "Upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s", Toast.LENGTH_LONG).show();
-                    tvUploadProgress.setText("Total upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s");
-                    btnDownload.setEnabled(true);
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Toast.makeText(MainActivity.this, "Failed: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                })
-        );
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ociSdk = new OciFileTransfer();
+                    ociSdk.testUpload(MainActivity.this, filePath, objectName);
+                } catch (IOException e) {
+                    Log.e("nt.dung", "E: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
 
-        disposableMap.add(ociSdk.observableProgress(uploadId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<ProgressEvent>() {
-                    @Override
-                    public void accept(ProgressEvent progressEvent) throws Exception {
-                        tvUploadProgress.setText(progressEvent.toString());
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e("nt.dung", "Tracking progress error");
-                    }
-                }));
+//        disposableMap.add(ociSdk.upload(uploadId, filePath, objectName)
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(aBoolean -> {
+//                    long duration = (System.currentTimeMillis() - timeMs);
+//                    Toast.makeText(this, "Upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s", Toast.LENGTH_LONG).show();
+//                    tvUploadProgress.setText("Total upload time: " + TimeUnit.MILLISECONDS.toSeconds(duration) + "s");
+//                    btnDownload.setEnabled(true);
+//                }, new Consumer<Throwable>() {
+//                    @Override
+//                    public void accept(Throwable throwable) throws Exception {
+//                        Toast.makeText(MainActivity.this, "Failed: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+//                    }
+//                })
+//        );
+//
+//        disposableMap.add(ociSdk.observableProgress(uploadId)
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Consumer<ProgressEvent>() {
+//                    @Override
+//                    public void accept(ProgressEvent progressEvent) throws Exception {
+//                        tvUploadProgress.setText(progressEvent.toString());
+//                    }
+//                }, new Consumer<Throwable>() {
+//                    @Override
+//                    public void accept(Throwable throwable) throws Exception {
+//                        Log.e("nt.dung", "Tracking progress error");
+//                    }
+//                }));
 
     }
 
@@ -163,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
         final ConfigFileReader.ConfigFile config = ConfigFileReader.parse(configStream, null);
 
         ociSdk = new OciFileTransfer();
-        ociSdk.initialize(this, config.get("tenancy"), config.get("user"), config.get("fingerprint"), Region.UK_LONDON_1, "Staging");
+        ociSdk.initialize(this, "Staging");
 
 
     }

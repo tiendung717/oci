@@ -56,7 +56,7 @@ dependencies {
     implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.65'
 
     // https://mvnrepository.com/artifact/com.oracle.oci.sdk/oci-java-sdk-objectstorage
-    implementation ('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.33.0') {
+    implementation ('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.25.0') {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
     }
 

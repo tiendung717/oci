@@ -1,6 +1,0 @@
-[DEFAULT]
-user=ocid1.user.oc1..aaaaaaaaaflvckuurvvagas45heubr6tqptw22jcypozspwqo473ow6fbm3q
-fingerprint=01:b8:73:61:ec:58:db:30:48:62:4f:78:2a:33:87:fe
-tenancy=ocid1.tenancy.oc1..aaaaaaaaam4tx4gnec3sq755rcw7y5snrkgxcwnn2gb4efctsm3zfa4lf7ea
-region=uk-london-1
-key_file=oci.pem

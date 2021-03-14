@@ -2,8 +2,10 @@ package com.safarifone.filetransfer;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,21 +15,24 @@ import java.text.DecimalFormat;
 import javax.annotation.Nullable;
 
 public class OciHelper {
-    public static String copyFileTo(Context c, String assetFileName, String destFile) throws IOException {
+    public static String copyFileTo(Context c, String assetFileName, String destFile) {
         InputStream myInput;
-        OutputStream myOutput = new FileOutputStream(destFile);
-        myInput = c.getAssets().open(assetFileName);
-        byte[] buffer = new byte[1024];
-        int length = myInput.read(buffer);
-        while (length > 0) {
-            myOutput.write(buffer, 0, length);
-            length = myInput.read(buffer);
+        try {
+            OutputStream myOutput = new FileOutputStream(new File(destFile));
+            myInput = c.getAssets().open(assetFileName);
+            byte[] buffer = new byte[1024];
+            int length = myInput.read(buffer);
+            while (length > 0) {
+                myOutput.write(buffer, 0, length);
+                length = myInput.read(buffer);
+            }
+
+            myInput.close();
+            myOutput.close();
+        } catch (Exception e) {
+            Log.e("nt.dung", "Can't copy asset file. " + e.getMessage());
+            return null;
         }
-
-        myOutput.flush();
-        myInput.close();
-        myOutput.close();
-
         return destFile;
     }
 
