@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.google.common.base.Supplier;
 import com.oracle.bmc.ClientConfiguration;
-import com.oracle.bmc.OCID;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
@@ -30,11 +29,12 @@ public class OciSdk {
 
     public void testUpload(Context context, String filePath, String objectName) throws IOException {
 
-        String pemFilePath = copyFileTo(context, context.getCacheDir().getAbsolutePath() + File.separator + System.currentTimeMillis() + ".pem");
+        String pemFilePath = copyFileTo(context, context.getCacheDir().getAbsolutePath() + File.separator + System.currentTimeMillis() + ".pem.txt");
 
-        Log.d("nt.dung", "File: " + pemFilePath);
+//        Log.d("nt.dung", "File: " + pemFilePath);
+//        Supplier<InputStream> keySupplier = new MyKeySupplier(context.getAssets().open("pem.txt"));
+
         Supplier<InputStream> keySupplier = new SimplePrivateKeySupplier(pemFilePath);
-
         SimpleAuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
                 .tenantId("ocid1.tenancy.oc1..aaaaaaaaam4tx4gnec3sq755rcw7y5snrkgxcwnn2gb4efctsm3zfa4lf7ea".trim())
                 .userId("ocid1.user.oc1..aaaaaaaaaflvckuurvvagas45heubr6tqptw22jcypozspwqo473ow6fbm3q".trim())
@@ -42,6 +42,8 @@ public class OciSdk {
                 .region(Region.UK_LONDON_1)
                 .privateKeySupplier(keySupplier)
                 .build();
+
+        Log.d("nt.dung", "Provider: " + provider.toString());
 
         ClientConfiguration clientConfig = ClientConfiguration.builder()
                 .retryConfiguration(RetryConfiguration.builder().build())
@@ -80,7 +82,7 @@ public class OciSdk {
             byte[] buffer = new byte[size];
             int length = input.read(buffer);
             output.write(buffer, 0, length);
-            Log.d("nt.dung", "Length of pem file: " + length);
+            Log.d("nt.dung", "Length of pem.txt file: " + length);
 
             output.flush();
             input.close();

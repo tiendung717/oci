@@ -27,7 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="12dp" />
 
-    <com.google.android.material.button.MaterialButton
+    <Button
         android:id="@+id/btnGrantPermission"
         android:layout_width="match_parent"
         android:layout_margin="12dp"
