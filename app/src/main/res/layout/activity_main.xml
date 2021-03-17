@@ -47,4 +47,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:text="50/100" />
+
+    <Button
+        android:id="@+id/btnGetNamespace"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Get name space" />
+
 </LinearLayout>

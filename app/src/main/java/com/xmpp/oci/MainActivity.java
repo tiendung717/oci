@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvDownloadProgress;
     private View btnDownload;
     private View btnUpload;
+    private View btnGetNamespace;
 
     private final CompositeDisposable disposableMap = new CompositeDisposable();
     private OciSdk ociSdk;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnUpload = findViewById(R.id.btnUpload);
         btnDownload = findViewById(R.id.btnDownload);
+        btnGetNamespace = findViewById(R.id.btnGetNamespace);
 
         ProgressBar progressBarUpload = findViewById(R.id.progressUpload);
         progressBarUpload.setVisibility(View.GONE);
@@ -53,6 +55,18 @@ public class MainActivity extends AppCompatActivity {
         tvDownloadProgress = findViewById(R.id.tvDownloadProgress);
 
         btnUpload.setOnClickListener(this::startUpload);
+        btnGetNamespace.setOnClickListener(this::getNameSpace);
+    }
+
+    private void getNameSpace(View view) {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                ociSdk = new OciSdk();
+                String namespace = ociSdk.testGetNamespace();
+                Log.d("nt.dung", "NS: " + namespace);
+            }
+        });
     }
 
 

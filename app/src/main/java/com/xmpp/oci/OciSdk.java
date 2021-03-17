@@ -61,14 +61,17 @@ public class OciSdk {
                 .readTimeoutMillis(60000)
                 .build();
 
-        ObjectStorage client = new ObjectStorageClient(provider, clientConfig);
+        ObjectStorage client = new ObjectStorageClient(provider);
 
         File file = new File(filePath);
+        String namespace = "axsj43xgdts8" ; //getNamespace(client, provider);
+
+        Log.d("nt.dung", "Namespace: " + namespace);
 
         PutObjectRequest putObjectRequest =
                 PutObjectRequest.builder()
                         .opcClientRequestId(UUID.randomUUID().toString())
-                        .namespaceName(getNamespace(client, provider))
+                        .namespaceName(namespace)
                         .bucketName("Staging")
                         .objectName(UUID.randomUUID().toString())
                         .contentLength(file.length())
@@ -93,7 +96,6 @@ public class OciSdk {
 
     public String getNamespace(ObjectStorage client, AuthenticationDetailsProvider provider) {
         GetNamespaceResponse namespaceResponse = client.getNamespace(GetNamespaceRequest.builder()
-                .compartmentId(provider.getTenantId())
                 .build());
         return namespaceResponse.getValue();
     }
@@ -120,5 +122,28 @@ public class OciSdk {
             return null;
         }
         return destFile;
+    }
+
+    public String testGetNamespace() {
+        Supplier<InputStream> keySupplier = new SimplePrivateKeySupplier(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + PEM_FILE_NAME);
+        SimpleAuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
+                .tenantId(TENANCY)
+                .userId(USER)
+                .fingerprint(FINGERPRINT)
+                .region(REGION)
+                .privateKeySupplier(keySupplier)
+                .build();
+
+        Log.d("nt.dung", "Provider: " + provider.toString());
+
+        ClientConfiguration clientConfig = ClientConfiguration.builder()
+                .retryConfiguration(RetryConfiguration.builder().build())
+                .connectionTimeoutMillis(3000)
+                .readTimeoutMillis(60000)
+                .build();
+
+        ObjectStorage client = new ObjectStorageClient(provider);
+
+        return getNamespace(client, provider);
     }
 }

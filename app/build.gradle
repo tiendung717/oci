@@ -65,7 +65,7 @@ android {
 
 configurations {
     implementation {
-        exclude group: 'org.glassfish.hk2.external', module: 'jakarta.inject'
+//        exclude group: 'org.glassfish.hk2.external', module: 'jakarta.inject'
         exclude group: 'javax.annotation', module: 'jsr250-api'
         exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
     }
@@ -73,20 +73,15 @@ configurations {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation(rootProject.deps.hilt_lifecycle_viewmodel)
-    implementation(rootProject.deps.hilt)
-    annotationProcessor (rootProject.deps.hiltAnnotation)
-    annotationProcessor(rootProject.deps.hiltCompiler)
 
     implementation("javax.annotation:javax.annotation-api:1.2")
     // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
     implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.65'
 
     // https://mvnrepository.com/artifact/com.oracle.oci.sdk/oci-java-sdk-objectstorage
-    implementation('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.33.0') {
+    implementation('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.33.2') {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
     }
-
 
     implementation 'com.github.yalantis:ucrop:2.2.6'
     implementation "androidx.activity:activity:1.2.0-alpha07"
@@ -94,6 +89,5 @@ dependencies {
 
     implementation rootProject.deps.rxAndroid
     implementation rootProject.deps.rxJava
-    implementation rootProject.deps.rxAdapter
 
 }

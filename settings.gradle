@@ -1,3 +1,2 @@
-include ':WaafiFileTransfer'
 include ':app'
 rootProject.name = "oci"
