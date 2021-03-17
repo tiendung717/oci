@@ -1,0 +1,5 @@
+[DEFAULT]
+user=ocid1.user.oc1..aaaaaaaa6xeqlugwqp6oreyyz6argwmjo77oah6n52xgz3fjzzz5ccyof5eq
+fingerprint=85:f5:98:d4:0c:15:08:b4:d2:3e:2c:93:ef:33:d9:9e
+tenancy=ocid1.tenancy.oc1..aaaaaaaagz7lkgw2p42gjrlkd4xec2qkdsayghdeq3gbjghoqenfm6twugkq
+region=uk-cardiff-1
