@@ -56,6 +56,11 @@ public class MainActivity extends AppCompatActivity {
 
         btnUpload.setOnClickListener(this::startUpload);
         btnGetNamespace.setOnClickListener(this::getNameSpace);
+
+        System.setProperty(
+                "java.version",
+                "1.8"
+        );
     }
 
     private void getNameSpace(View view) {

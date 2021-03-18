@@ -10,6 +10,10 @@ import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
+import com.oracle.bmc.http.ClientConfigurator;
+import com.oracle.bmc.http.signing.SigningStrategy;
+import com.oracle.bmc.http.signing.internal.DefaultRequestSignerFactory;
+import com.oracle.bmc.http.signing.internal.PEMFileRSAPrivateKeySupplier;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
@@ -64,7 +68,7 @@ public class OciSdk {
         ObjectStorage client = new ObjectStorageClient(provider);
 
         File file = new File(filePath);
-        String namespace = "axsj43xgdts8" ; //getNamespace(client, provider);
+        String namespace = "axsj43xgdts8"; //getNamespace(client, provider);
 
         Log.d("nt.dung", "Namespace: " + namespace);
 
@@ -137,12 +141,16 @@ public class OciSdk {
         Log.d("nt.dung", "Provider: " + provider.toString());
 
         ClientConfiguration clientConfig = ClientConfiguration.builder()
-                .retryConfiguration(RetryConfiguration.builder().build())
                 .connectionTimeoutMillis(3000)
                 .readTimeoutMillis(60000)
                 .build();
 
-        ObjectStorage client = new ObjectStorageClient(provider);
+        ClientConfigurator clientConfigurator = new TlsClientConfigurator();
+
+        ObjectStorage client = new ObjectStorageClient(provider, clientConfig, clientConfigurator, new DefaultRequestSignerFactory(SigningStrategy.STANDARD));
+
+        PEMFileRSAPrivateKeySupplier rsa = new PEMFileRSAPrivateKeySupplier(keySupplier.get(),null);
+        Log.d("nt.dung", "Key: " + rsa.getKey().toString());
 
         return getNamespace(client, provider);
     }
