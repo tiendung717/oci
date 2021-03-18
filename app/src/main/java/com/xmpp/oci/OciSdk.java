@@ -44,60 +44,6 @@ public class OciSdk {
 
     }
 
-    public void testUpload(Context context, String filePath, String objectName) throws IOException {
-
-//        String pemFilePath = copyFileTo(context, context.getCacheDir().getAbsolutePath() + File.separator + System.currentTimeMillis() + "_oci_key.pem", PEM_FILE_NAME);
-
-        Supplier<InputStream> keySupplier = new SimplePrivateKeySupplier(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + PEM_FILE_NAME);
-        SimpleAuthenticationDetailsProvider provider = SimpleAuthenticationDetailsProvider.builder()
-                .tenantId(TENANCY)
-                .userId(USER)
-                .fingerprint(FINGERPRINT)
-                .region(REGION)
-                .privateKeySupplier(keySupplier)
-                .build();
-
-        Log.d("nt.dung", "Provider: " + provider.toString());
-
-        ClientConfiguration clientConfig = ClientConfiguration.builder()
-                .retryConfiguration(RetryConfiguration.builder().build())
-                .connectionTimeoutMillis(3000)
-                .readTimeoutMillis(60000)
-                .build();
-
-        ObjectStorage client = new ObjectStorageClient(provider);
-
-        File file = new File(filePath);
-        String namespace = "axsj43xgdts8"; //getNamespace(client, provider);
-
-        Log.d("nt.dung", "Namespace: " + namespace);
-
-        PutObjectRequest putObjectRequest =
-                PutObjectRequest.builder()
-                        .opcClientRequestId(UUID.randomUUID().toString())
-                        .namespaceName(namespace)
-                        .bucketName("Staging")
-                        .objectName(UUID.randomUUID().toString())
-                        .contentLength(file.length())
-                        .build();
-
-        UploadManager.UploadRequest uploadRequest = UploadManager.UploadRequest.builder(file)
-                .allowOverwrite(true)
-                .build(putObjectRequest);
-
-        UploadConfiguration uploadConfiguration =
-                UploadConfiguration.builder()
-                        .allowMultipartUploads(true)
-                        .allowParallelUploads(true)
-                        .build();
-
-        UploadManager uploadManager = new UploadManager(client, uploadConfiguration);
-        uploadManager.upload(uploadRequest);
-
-        Log.d("nt.dung", "Uploaded!!!");
-    }
-
-
     public String getNamespace(ObjectStorage client, AuthenticationDetailsProvider provider) {
         GetNamespaceResponse namespaceResponse = client.getNamespace(GetNamespaceRequest.builder()
                 .build());
@@ -147,7 +93,9 @@ public class OciSdk {
 
         ClientConfigurator clientConfigurator = new TlsClientConfigurator();
 
+
         ObjectStorage client = new ObjectStorageClient(provider, clientConfig, clientConfigurator, new DefaultRequestSignerFactory(SigningStrategy.STANDARD));
+        client.setRegion(Region.UK_CARDIFF_1);
 
         PEMFileRSAPrivateKeySupplier rsa = new PEMFileRSAPrivateKeySupplier(keySupplier.get(),null);
         Log.d("nt.dung", "Key: " + rsa.getKey().toString());

@@ -54,13 +54,8 @@ public class MainActivity extends AppCompatActivity {
         tvUploadProgress = findViewById(R.id.tvUploadProgress);
         tvDownloadProgress = findViewById(R.id.tvDownloadProgress);
 
-        btnUpload.setOnClickListener(this::startUpload);
         btnGetNamespace.setOnClickListener(this::getNameSpace);
 
-        System.setProperty(
-                "java.version",
-                "1.8"
-        );
     }
 
     private void getNameSpace(View view) {
@@ -75,63 +70,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void startUpload(View view) {
-        pickFile();
-//        Executors.newSingleThreadExecutor().execute(() -> ociSdk.getNamespace());
-
-    }
-
-    private void doUpload(String filePath) {
-        uploadFilePath = filePath;
-        String objectName = UUID.randomUUID().toString() + "@" + new File(filePath).getName();
-
-        Log.d("nt.dung", String.format("Upload: (%s)", objectName));
-
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ociSdk = new OciSdk();
-                    ociSdk.testUpload(MainActivity.this, filePath, objectName);
-                } catch (IOException e) {
-                    Log.e("nt.dung", "E: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
     @Override
     protected void onDestroy() {
         disposableMap.dispose();
         super.onDestroy();
-    }
-
-
-    public void pickFile() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        startActivityForResult(Intent.createChooser(intent, "Select File"), REQUEST_FILE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == Activity.RESULT_OK) {
-            if (data == null) {
-                Toast.makeText(this, "Something is wrong with data", Toast.LENGTH_LONG).show();
-                return;
-            }
-            switch (requestCode) {
-                case REQUEST_FILE:
-                    String path = FilePathUri.getPath(this, data.getData());
-                    Toast.makeText(this, "Start upload file " + path, Toast.LENGTH_LONG).show();
-                    doUpload(path);
-                    break;
-            }
-        }
     }
 }

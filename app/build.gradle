@@ -63,26 +63,12 @@ android {
     }
 }
 
-configurations {
-    implementation {
-//        exclude group: 'org.glassfish.hk2.external', module: 'jakarta.inject'
-//        exclude group: 'javax.annotation', module: 'jsr250-api'
-//        exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
-    }
-}
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
-//    implementation("javax.annotation:javax.annotation-api:1.2")
-//    implementation 'org.conscrypt:conscrypt-android:2.5.1'
-    // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
-    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.58'
-
     // https://mvnrepository.com/artifact/com.oracle.oci.sdk/oci-java-sdk-objectstorage
-    implementation('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.33.2') {
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
-    }
+    implementation('com.oracle.oci.sdk:oci-java-sdk-objectstorage:1.33.0')
 
     implementation 'com.github.yalantis:ucrop:2.2.6'
     implementation "androidx.activity:activity:1.2.0-alpha07"
